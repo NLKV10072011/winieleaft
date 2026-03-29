@@ -1,0 +1,217 @@
+[
+  {
+    "id": "ba767cfa-c605-4cbd-a668-9cfc667edda8",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "â",
+    "items": [
+      {
+        "productId": "p2",
+        "name": "Son nách thảo dược mộc nam 10ml",
+        "qty": 1,
+        "price": 210000
+      }
+    ],
+    "total": 210000,
+    "paymentMethod": "qr",
+    "status": "delivered",
+    "createdAt": "2026-03-29T03:47:11.231Z"
+  },
+  {
+    "id": "51606e59-ab27-44c6-a26f-d07e7014f11a",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "aa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Xịt khử mùi thảo dược mộc nam 50ml",
+        "qty": 1,
+        "price": 250000
+      }
+    ],
+    "total": 250000,
+    "paymentMethod": "qr",
+    "status": "delivered",
+    "createdAt": "2026-03-29T03:16:40.743Z"
+  },
+  {
+    "id": "97136d4d-e163-41e5-a7aa-f5eea2ab1d2e",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "aa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Xịt khử mùi thảo dược mộc nam 50ml",
+        "qty": 6,
+        "price": 250000
+      }
+    ],
+    "total": 1500000,
+    "paymentMethod": "cod",
+    "status": "processing",
+    "createdAt": "2026-03-29T03:10:46.720Z"
+  },
+  {
+    "id": "1b6f624c-88fe-48ad-bb8d-e739d77ac912",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "aa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 1,
+        "price": 189000
+      }
+    ],
+    "total": 189000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T02:57:55.419Z"
+  },
+  {
+    "id": "c74544d5-1b48-431f-a4c2-8b63cce66ed8",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "aaa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 3,
+        "price": 189000
+      }
+    ],
+    "total": 567000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T02:56:57.116Z"
+  },
+  {
+    "id": "6272cc72-a565-4f3c-9a34-7533f5df1ea8",
+    "userId": "dc5b4273-e955-4f92-a112-88628e5a3a5a",
+    "customerName": "Ng a",
+    "phone": "0968881809",
+    "address": "aa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 5,
+        "price": 189000
+      }
+    ],
+    "total": 945000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T02:30:36.139Z"
+  },
+  {
+    "id": "8bdbd0b9-f6cb-4ce2-be8d-0d031f3bfb9a",
+    "userId": null,
+    "customerName": "aa",
+    "phone": "0968881809",
+    "address": "111",
+    "items": [
+      {
+        "productId": "p2",
+        "name": "Nến thơm gỗ đàn hương",
+        "qty": 1,
+        "price": 259000
+      },
+      {
+        "productId": "p4",
+        "name": "Serum dưỡng ẩm nha đam",
+        "qty": 11,
+        "price": 320000
+      }
+    ],
+    "total": 3779000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T02:28:32.901Z"
+  },
+  {
+    "id": "6327669b-4792-40f7-a51f-45b7985c70f9",
+    "userId": "dc5b4273-e955-4f92-a112-88628e5a3a5a",
+    "customerName": "Ng a",
+    "phone": "0968881809",
+    "address": "aaa",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 4,
+        "price": 189000
+      }
+    ],
+    "total": 756000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T02:25:43.214Z"
+  },
+  {
+    "id": "d1a37cb5-3d8a-4409-8137-0be7da37a2c9",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "1111",
+    "items": [
+      {
+        "productId": "p2",
+        "name": "Nến thơm gỗ đàn hương",
+        "qty": 1,
+        "price": 259000
+      }
+    ],
+    "total": 259000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T01:55:25.886Z"
+  },
+  {
+    "id": "9b266916-c287-4a1a-a9d2-eb59f6264775",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "1",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 1,
+        "price": 189000
+      }
+    ],
+    "total": 189000,
+    "paymentMethod": "cod",
+    "status": "pending",
+    "createdAt": "2026-03-29T01:42:32.667Z"
+  },
+  {
+    "id": "bba70d59-adca-4238-adf5-2abf90b067e8",
+    "userId": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "customerName": "Nguyễn A",
+    "phone": "0968881809",
+    "address": "1167",
+    "items": [
+      {
+        "productId": "p1",
+        "name": "Tinh dầu sả chanh organic",
+        "qty": 2,
+        "price": 189000
+      }
+    ],
+    "total": 378000,
+    "paymentMethod": "qr",
+    "status": "cancelled",
+    "createdAt": "2026-03-29T01:39:24.686Z"
+  }
+]

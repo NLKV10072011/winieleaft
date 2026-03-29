@@ -1,0 +1,5 @@
+server/.env
+server/uploads/
+.env
+.env.local
+*.local

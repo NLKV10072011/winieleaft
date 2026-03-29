@@ -1,0 +1,35 @@
+[
+  {
+    "id": "1019fdff-9609-4534-9f0c-422e31f9de6f",
+    "email": "admin@winieleaf.local",
+    "passwordHash": "$2b$10$m1rY0O8/eO4h/By/eV5Ade6L8w2A7vD/xtQ6gH/tr6v2f0K1VyRXm",
+    "name": "Quản trị Winie Leaf",
+    "phone": "0900000000",
+    "addresses": [],
+    "wishlist": [],
+    "points": 0,
+    "role": "admin"
+  },
+  {
+    "id": "40a9ba95-c009-4f25-8455-b03af40bb9b9",
+    "email": "nlkv10072011@gmail.com",
+    "passwordHash": "$2b$10$qY.0m17LJEdYjL3PrsCSweSia3478yy2M/G5TXT3LdudyQyJ0Lmn6",
+    "name": "Nguyễn A",
+    "phone": "0968881809",
+    "addresses": [],
+    "wishlist": [],
+    "points": 350,
+    "role": "user"
+  },
+  {
+    "id": "dc5b4273-e955-4f92-a112-88628e5a3a5a",
+    "email": "nkv10072011@gmail.com",
+    "passwordHash": "$2b$10$yXaYOVV7JFnglsad5rikL.NUrUdwUDH09S7muzZMrQ1n4MAUh4GsW",
+    "name": "Ng a",
+    "phone": "0968881809",
+    "addresses": [],
+    "wishlist": [],
+    "points": 169,
+    "role": "user"
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "p1",
+    "name": "Xịt khử mùi thảo dược mộc nam 50ml",
+    "slug": "xit-khu-mui-moc-nam-50ml",
+    "description": "Khử mùi hiệu quả, giảm mồ hôi, sáng da nách.",
+    "price": 250000,
+    "category": "cham-co-the",
+    "rating": 4.7,
+    "image": "p1.jpg",
+    "stock": 24,
+    "featured": true
+  },
+  {
+    "id": "p2",
+    "name": "Son nách thảo dược mộc nam 10ml",
+    "slug": "son-nach-moc-nam-10ml",
+    "description": "Khử mùi 24h, hương hoa cúc nhẹ nhàng.",
+    "price": 210000,
+    "category": "cham-co-the",
+    "rating": 4.6,
+    "image": "p2.jpg",
+    "stock": 24,
+    "featured": true
+  },
+  {
+    "id": "p3",
+    "name": "Serum mọc tóc X5 mộc nam 70ml",
+    "slug": "serum-moc-toc-x5",
+    "description": "Kích thích mọc tóc, ngăn rụng, dưỡng tóc chắc khỏe.",
+    "price": 350000,
+    "category": "toc",
+    "rating": 4.8,
+    "image": "p3.jpg",
+    "stock": 20,
+    "featured": true
+  },
+  {
+    "id": "p4",
+    "name": "Xịt dưỡng tóc mộc nam 70ml",
+    "slug": "xit-duong-toc",
+    "description": "Giúp tóc mềm mượt, dưỡng ẩm và phục hồi tóc hư tổn.",
+    "price": 250000,
+    "category": "toc",
+    "rating": 4.7,
+    "image": "p4.jpg",
+    "stock": 28,
+    "featured": false
+  },
+  {
+    "id": "p5",
+    "name": "Bọt vệ sinh mộc nam 150ml",
+    "slug": "bot-ve-sinh-moc-nam",
+    "description": "Làm sạch dịu nhẹ, khử mùi, kháng khuẩn.",
+    "price": 290000,
+    "category": "cham-co-the",
+    "rating": 4.6,
+    "image": "p5.jpg",
+    "stock": 35,
+    "featured": false
+  },
+  {
+    "id": "p6",
+    "name": "Gel tắm thảo dược mộc nam 425ml",
+    "slug": "gel-tam-moc-nam",
+    "description": "Làm sạch dịu nhẹ, dưỡng ẩm, kháng khuẩn tự nhiên.",
+    "price": 470000,
+    "category": "cham-co-the",
+    "rating": 4.7,
+    "image": "p6.jpg",
+    "stock": 22,
+    "featured": true
+  },
+  {
+    "id": "p7",
+    "name": "Kem xả thảo dược mộc nam",
+    "slug": "kem-xa-moc-nam",
+    "description": "Dưỡng tóc chắc khỏe, mềm mượt, không bết dính.",
+    "price": 430700,
+    "category": "toc",
+    "rating": 4.6,
+    "image": "p7.jpg",
+    "stock": 18,
+    "featured": false
+  },
+  {
+    "id": "p8",
+    "name": "Dầu gội thảo dược mộc nam",
+    "slug": "dau-goi-moc-nam",
+    "description": "Ngăn rụng tóc, kích thích mọc tóc tự nhiên.",
+    "price": 470000,
+    "category": "toc",
+    "rating": 4.8,
+    "image": "p8.jpg",
+    "stock": 26,
+    "featured": true
+  }
+]
