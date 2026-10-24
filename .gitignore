@@ -1,5 +1,20 @@
-server/.env
-server/uploads/
+# Thư mục phụ thuộc (Node modules)
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Thư mục build / dist
+dist/
+build/
+.firebase/
+
+# File tạm, scratch & dự án con trùng lặp
+scratch/
+winie/
+winieleaft/
+Ảnh bìa của sản phẩm/
+
+# Các file môi trường / bí mật
 .env
-.env.local
 *.local
+server/service-account.json

@@ -11,10 +11,12 @@ export type CartLine = {
 
 type CartState = {
   items: CartLine[]
+  isOpen: boolean
   add: (line: Omit<CartLine, 'qty'> & { qty?: number }) => void
   remove: (productId: string) => void
   setQty: (productId: string, qty: number) => void
   clear: () => void
+  setOpen: (val: boolean) => void
 }
 
 const cartPersist: PersistOptions<CartState, Pick<CartState, 'items'>> = {
@@ -26,13 +28,14 @@ export const useCartStore = create(
   persist<CartState, [], [], Pick<CartState, 'items'>>(
     (set, get) => ({
       items: [],
+      isOpen: false,
       add: (line) => {
         const items = [...get().items]
         const i = items.findIndex((x) => x.productId === line.productId)
         const q = line.qty ?? 1
         if (i >= 0) items[i] = { ...items[i], qty: items[i].qty + q }
         else items.push({ ...line, qty: q })
-        set({ items })
+        set({ items, isOpen: true }) // Auto open when add
       },
       remove: (productId) =>
         set({ items: get().items.filter((x) => x.productId !== productId) }),
@@ -48,6 +51,7 @@ export const useCartStore = create(
         })
       },
       clear: () => set({ items: [] }),
+      setOpen: (isOpen) => set({ isOpen }),
     }),
     cartPersist
   )

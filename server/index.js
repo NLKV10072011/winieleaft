@@ -9,9 +9,25 @@ const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 const http = require('http')
 const { Server } = require('socket.io')
+const rateLimit = require('express-rate-limit')
 const { readJson, writeJson } = require('./db')
 const { sendOrderEmail, verifySmtp } = require('./mail')
 const { chatGemini } = require('./geminiChat')
+const admin = require('firebase-admin')
+
+// Initialize Firebase Admin
+try {
+  const saPath = path.join(__dirname, 'service-account.json')
+  if (fs.existsSync(saPath)) {
+    admin.initializeApp({ credential: admin.credential.cert(require(saPath)) })
+    console.log('[firebase] Admin SDK initialized with service-account.json')
+  } else {
+    admin.initializeApp({ projectId: 'winieleaft' })
+    console.log('[firebase] Admin SDK initialized with Project ID fallback')
+  }
+} catch (e) {
+  console.error('[firebase] Init error:', e.message)
+}
 
 const PORT = process.env.PORT || 3001
 const JWT_SECRET = process.env.JWT_SECRET || 'winie-leaf-dev-secret-change-me'
@@ -20,9 +36,54 @@ const app = express()
 app.use(cors({ origin: true, credentials: true }))
 app.use(express.json({ limit: '1mb' }))
 
+// --- RATE LIMITERS ---
+// Giới hạn chung toàn bộ API: 200 req/phút/IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' },
+})
+
+// Auth (login/register): 5 lần/15 phút — chặn brute-force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Quá nhiều lần đăng nhập thất bại, thử lại sau 15 phút.' },
+})
+
+// Chat AI: 20 tin/phút — tránh lạm dụng Gemini quota
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Bạn gửi quá nhiều tin nhắn, hãy chờ một chút.' },
+})
+
+// Đặt hàng: 10 đơn/phút/IP
+const orderLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Quá nhiều yêu cầu đặt hàng, vui lòng thử lại sau.' },
+})
+
+app.use('/api/', globalLimiter)
+
 const uploadsProductsDir = path.join(__dirname, 'uploads', 'products')
 fs.mkdirSync(uploadsProductsDir, { recursive: true })
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '7d',
+    immutable: true,
+  })
+)
 
 const productImageUpload = multer({
   storage: multer.diskStorage({
@@ -92,7 +153,7 @@ function requireAdmin(req, res, next) {
 
 app.use(authMiddleware)
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', authLimiter, (req, res) => {
   const { email, password, name, phone } = req.body
   if (!email || !password || !name)
     return res.status(400).json({ error: 'Thiếu thông tin' })
@@ -120,7 +181,7 @@ app.post('/api/auth/register', (req, res) => {
   res.json({ token, user: publicUser(user) })
 })
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', authLimiter, (req, res) => {
   const { email, password } = req.body
   const users = readJson('users', [])
   const user = users.find((u) => u.email === email)
@@ -132,6 +193,53 @@ app.post('/api/auth/login', (req, res) => {
     { expiresIn: '14d' }
   )
   res.json({ token, user: publicUser(user) })
+})
+
+app.post('/api/auth/social', async (req, res) => {
+  const { idToken } = req.body
+  if (!idToken) return res.status(400).json({ error: 'Thiếu Token' })
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken)
+    const { email, name, picture, sub: uid } = decodedToken
+
+    let users = readJson('users', [])
+    let user = users.find((u) => u.email === email || u.firebaseUid === uid)
+
+    if (!user) {
+      // Create new user for social login
+      user = {
+        id: uuidv4(),
+        firebaseUid: uid,
+        email,
+        name: name || email.split('@')[0],
+        avatar: picture || '',
+        phone: '',
+        addresses: [],
+        wishlist: [],
+        points: 0,
+        role: 'user',
+        provider: 'google'
+      }
+      users.push(user)
+      writeJson('users', users)
+    } else if (!user.firebaseUid) {
+      // Link existing account if email matches
+      user.firebaseUid = uid
+      if (!user.avatar && picture) user.avatar = picture
+      writeJson('users', users)
+    }
+
+    const token = jwt.sign(
+      { sub: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '14d' }
+    )
+    res.json({ token, user: publicUser(user) })
+  } catch (err) {
+    console.error('[auth] Social Login Error:', err.message)
+    res.status(401).json({ error: 'Xác thực Google thất bại: ' + err.message })
+  }
 })
 
 app.get('/api/auth/me', requireAuth, (req, res) => {
@@ -185,7 +293,7 @@ function publicUser(u) {
   }
 }
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   const { messages } = req.body || {}
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'Thiếu tin nhắn' })
@@ -204,8 +312,8 @@ app.post('/api/chat', async (req, res) => {
   } catch (e) {
     const code =
       typeof e.statusCode === 'number' &&
-      e.statusCode >= 400 &&
-      e.statusCode < 600
+        e.statusCode >= 400 &&
+        e.statusCode < 600
         ? e.statusCode
         : 500
     res.status(code).json({ error: e.message || 'Lỗi chat' })
@@ -227,8 +335,15 @@ app.get('/api/products', (req, res) => {
         (p.description && p.description.toLowerCase().includes(q))
     )
   }
+  const brand = req.query.brand
+  const subCategory = req.query.subCategory
+
   if (category && category !== 'all')
     list = list.filter((p) => p.category === category)
+  if (brand && brand !== 'all')
+    list = list.filter((p) => p.brand === brand)
+  if (subCategory && subCategory !== 'all')
+    list = list.filter((p) => p.subCategory === subCategory)
   if (minPrice != null && !Number.isNaN(minPrice))
     list = list.filter((p) => p.price >= minPrice)
   if (maxPrice != null && !Number.isNaN(maxPrice))
@@ -378,27 +493,47 @@ app.get('/api/suggestions', (req, res) => {
   res.json(list)
 })
 
-app.post('/api/orders', async (req, res) => {
-  const { customerName, phone, address, items, paymentMethod } = req.body
+app.post('/api/orders', orderLimiter, async (req, res) => {
+  const { customerName, phone, address, items, paymentMethod, couponCode } = req.body
   if (!customerName || !phone || !address || !items?.length)
     return res.status(400).json({ error: 'Thiếu thông tin đơn hàng' })
   const products = readJson('products', [])
-  let total = 0
+  let subtotal = 0
   const lineItems = []
   for (const line of items) {
     const p = products.find((x) => x.id === line.productId)
     if (!p) return res.status(400).json({ error: 'Sản phẩm không hợp lệ' })
     const qty = Math.max(1, Number(line.qty) || 1)
     if (p.stock < qty) return res.status(400).json({ error: `Hết hàng: ${p.name}` })
-    total += p.price * qty
+    subtotal += p.price * qty
     lineItems.push({
       productId: p.id,
       name: p.name,
       qty,
       price: p.price,
+      image: p.image,
     })
   }
 
+  // Apply coupon
+  let discount = 0
+  let appliedCoupon = null
+  if (couponCode) {
+    const coupons = readJson('coupons', [])
+    const c = coupons.find((x) => x.code === String(couponCode).toUpperCase() && x.active)
+    if (c) {
+      const isExpired = c.expiryDate && new Date(c.expiryDate) < new Date()
+      const isEligible = subtotal >= (c.minOrderValue || 0)
+      if (!isExpired && isEligible) {
+        discount = c.discountType === 'percent'
+          ? Math.round((subtotal * c.discountValue) / 100)
+          : c.discountValue
+        appliedCoupon = c.code
+      }
+    }
+  }
+
+  const total = Math.max(0, subtotal - discount)
   const userId = req.user?.sub || null
   const order = {
     id: uuidv4(),
@@ -407,6 +542,9 @@ app.post('/api/orders', async (req, res) => {
     phone,
     address,
     items: lineItems,
+    subtotal,
+    discount,
+    appliedCoupon,
     total,
     paymentMethod: paymentMethod || 'cod',
     status: 'pending',
@@ -436,13 +574,13 @@ app.post('/api/orders', async (req, res) => {
   const paymentHint =
     order.paymentMethod === 'qr'
       ? {
-          accountName:
-            process.env.PAYMENT_ACCOUNT_NAME || 'NGUYEN LE KIEN VAN',
-          transferContent: `WINIE ${order.id.slice(0, 8)}`,
-          caption:
-            process.env.PAYMENT_QR_CAPTION ||
-            'QR nhận tiền từ mọi ứng dụng chuyển tiền',
-        }
+        accountName:
+          process.env.PAYMENT_ACCOUNT_NAME || 'NGUYEN LE KIEN VAN',
+        transferContent: `WINIE ${order.id.slice(0, 8)}`,
+        caption:
+          process.env.PAYMENT_QR_CAPTION ||
+          'QR nhận tiền từ mọi ứng dụng chuyển tiền',
+      }
       : undefined
 
   let emailNotify = { sent: false }
@@ -470,6 +608,27 @@ app.get('/api/orders', requireAuth, (req, res) => {
   if (req.user.role !== 'admin')
     orders = orders.filter((o) => o.userId === req.user.sub)
   res.json(orders)
+})
+
+app.get('/api/orders/:id', (req, res) => {
+  const { phone } = req.query
+  const orders = readJson('orders', [])
+  const o = orders.find((x) => x.id === req.params.id)
+  if (!o) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' })
+
+  // Case 1: Is Admin
+  if (req.user?.role === 'admin') return res.json(o)
+
+  // Case 2: Is Owner (logged in)
+  if (req.user?.sub && o.userId === req.user.sub) return res.json(o)
+
+  // Case 3: Public tracking with phone matching
+  if (phone && String(o.phone).replace(/\s/g, '') === String(phone).replace(/\s/g, '')) {
+    return res.json(o)
+  }
+
+  // Case 4: No access
+  res.status(403).json({ error: 'Bạn không có quyền xem đơn hàng này' })
 })
 
 app.patch('/api/orders/:id/status', requireAuth, requireAdmin, (req, res) => {
@@ -569,6 +728,54 @@ app.get('/api/admin/customers', requireAuth, requireAdmin, (req, res) => {
   res.json(users.filter((u) => u.role === 'user').map(publicUser))
 })
 
+// --- COUPONS API ---
+app.get('/api/admin/coupons', requireAuth, requireAdmin, (req, res) => {
+  res.json(readJson('coupons', []))
+})
+
+app.post('/api/admin/coupons', requireAuth, requireAdmin, (req, res) => {
+  const { code, discountType, discountValue, minOrderValue, expiryDate } = req.body
+  if (!code || !discountType || !discountValue)
+    return res.status(400).json({ error: 'Thiếu thông tin mã giảm giá' })
+  const coupons = readJson('coupons', [])
+  const newCoupon = {
+    id: uuidv4(),
+    code: String(code).toUpperCase(),
+    discountType,
+    discountValue: Number(discountValue),
+    minOrderValue: Number(minOrderValue || 0),
+    expiryDate: expiryDate || null,
+    active: true,
+  }
+  coupons.push(newCoupon)
+  writeJson('coupons', coupons)
+  res.json(newCoupon)
+})
+
+app.delete('/api/admin/coupons/:id', requireAuth, requireAdmin, (req, res) => {
+  let coupons = readJson('coupons', [])
+  coupons = coupons.filter((c) => c.id !== req.params.id)
+  writeJson('coupons', coupons)
+  res.status(204).end()
+})
+
+app.get('/api/coupons/validate', (req, res) => {
+  const code = String(req.query.code || '').toUpperCase().trim()
+  const total = Number(req.query.total || 0)
+  if (!code) return res.status(400).json({ error: 'Thiếu mã' })
+  const coupons = readJson('coupons', [])
+  const c = coupons.find((x) => x.code === code && x.active)
+  if (!c) return res.status(404).json({ error: 'Mã không tồn tại hoặc đã hết hạn' })
+  if (c.expiryDate && new Date(c.expiryDate) < new Date())
+    return res.status(400).json({ error: 'Mã đã hết hạn sử dụng' })
+  if (total < (c.minOrderValue || 0))
+    return res.status(400).json({ error: `Đơn tối thiểu ${Number(c.minOrderValue).toLocaleString('vi-VN')}đ` })
+  const discount = c.discountType === 'percent'
+    ? Math.round((total * c.discountValue) / 100)
+    : c.discountValue
+  res.json({ ...c, discount })
+})
+
 app.get('/api/admin/products', requireAuth, requireAdmin, (req, res) => {
   res.json(readJson('products', []))
 })
@@ -659,11 +866,30 @@ function buildQrPayload(order) {
 }
 
 const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: '*' } })
+const io = new Server(server, {
+  cors: { origin: '*' },
+})
 
+// --- SOCKET SECURITY ---
+// Verify JWT khi client muốn vào room admin
 io.on('connection', (socket) => {
-  socket.on('join:admin', () => {
-    socket.join('admin')
+  socket.on('join:admin', (token) => {
+    if (!token || typeof token !== 'string') {
+      socket.emit('admin:error', 'Thiếu token xác thực')
+      return
+    }
+    try {
+      const payload = jwt.verify(token, JWT_SECRET)
+      if (payload.role !== 'admin') {
+        socket.emit('admin:error', 'Không có quyền admin')
+        return
+      }
+      socket.join('admin')
+      socket.emit('admin:joined', { ok: true })
+      console.log(`[socket] Admin joined: ${payload.sub}`)
+    } catch (err) {
+      socket.emit('admin:error', 'Token không hợp lệ hoặc đã hết hạn')
+    }
   })
 })
 

@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+// Storefront
 import { Layout } from './components/Layout'
-import { ScrollToTop } from './components/ScrollToTop'
-import { useThemeStore } from './store/themeStore'
 import { Home } from './pages/Home'
 import { Products } from './pages/Products'
 import { ProductDetail } from './pages/ProductDetail'
@@ -11,8 +11,23 @@ import { Checkout } from './pages/Checkout'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Account } from './pages/Account'
-import { Admin } from './pages/Admin'
 import { Wishlist } from './pages/Wishlist'
+import { OrderTracking } from './pages/OrderTracking'
+import { About } from './pages/About'
+import { NotFound } from './pages/NotFound'
+
+// Admin
+import { AdminLayout } from './components/admin/AdminLayout'
+import { DashboardHome } from './pages/admin/DashboardHome'
+import { ProductManager } from './pages/admin/ProductManager'
+import { OrderManager } from './pages/admin/OrderManager'
+import { CustomerManager } from './pages/admin/CustomerManager'
+import { AdminSettings } from './pages/admin/AdminSettings'
+import { CouponManager } from './pages/admin/CouponManager'
+
+// Global Utils
+import { ScrollToTop } from './components/ScrollToTop'
+import { useThemeStore } from './store/themeStore'
 
 function ThemeSync() {
   const theme = useThemeStore((s) => s.theme)
@@ -27,9 +42,12 @@ export default function App() {
     <BrowserRouter>
       <ThemeSync />
       <ScrollToTop />
+
       <Routes>
+        {/* PUBLIC STOREFRONT SCENE */}
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
@@ -38,7 +56,19 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/orders/:id" element={<OrderTracking />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {/* ADMIN SCENE (Premium Apple-like layout) */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardHome />} />
+          <Route path="products" element={<ProductManager />} />
+          <Route path="orders" element={<OrderManager />} />
+          <Route path="customers" element={<CustomerManager />} />
+          <Route path="coupons" element={<CouponManager />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

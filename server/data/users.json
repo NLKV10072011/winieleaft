@@ -7,7 +7,7 @@
     "phone": "0900000000",
     "addresses": [],
     "wishlist": [],
-    "points": 0,
+    "points": 350,
     "role": "admin"
   },
   {
@@ -18,7 +18,7 @@
     "phone": "0968881809",
     "addresses": [],
     "wishlist": [],
-    "points": 350,
+    "points": 654,
     "role": "user"
   },
   {
@@ -31,5 +31,18 @@
     "wishlist": [],
     "points": 169,
     "role": "user"
+  },
+  {
+    "id": "bad70de6-82d3-4954-9f00-a4e893cfb03a",
+    "firebaseUid": "ATWZErYQO0hSFMB7HDLtGjL0jws2",
+    "email": "nlkienvan123456789@gmail.com",
+    "name": "Kiến Văn Nguyễn Lê",
+    "avatar": "https://lh3.googleusercontent.com/a/ACg8ocJAtV9cax6PNcOQ1Ki13EwTlx9o7S-hzgtXQ9kbWTdIW_WpnXj9=s96-c",
+    "phone": "",
+    "addresses": [],
+    "wishlist": [],
+    "points": 236,
+    "role": "user",
+    "provider": "google"
   }
 ]

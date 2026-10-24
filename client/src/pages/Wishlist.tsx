@@ -1,76 +1,100 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Heart } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Heart, Loader2 } from 'lucide-react'
 import { ProductCard } from '../components/ProductCard'
 import { apiGet, type Product } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useLocalWishlistStore } from '../store/localWishlistStore'
+import { Link } from 'react-router-dom'
 
 export function Wishlist() {
   const user = useAuthStore((s) => s.user)
   const localIds = useLocalWishlistStore((s) => s.ids)
-  const [products, setProducts] = useState<Product[]>([])
+  const [list, setList] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const mergedIds = useMemo(() => {
-    const fromUser = user?.wishlist ?? []
-    return [...new Set([...fromUser, ...localIds])]
-  }, [user?.wishlist, localIds])
+  const ids = Array.from(new Set([...(user?.wishlist ?? []), ...localIds]))
 
   useEffect(() => {
-    apiGet<Product[]>('/products')
-      .then(setProducts)
-      .catch(() => setProducts([]))
-  }, [])
-
-  const list = useMemo(
-    () => products.filter((p) => mergedIds.includes(p.id)),
-    [products, mergedIds]
-  )
+    if (ids.length === 0) {
+      setList([])
+      setLoading(false)
+      return
+    }
+    
+    let cancelled = false
+    void (async () => {
+      setLoading(true)
+      try {
+        const query = ids.join(',')
+        const data = await apiGet<Product[]>(`/products?ids=${encodeURIComponent(query)}`)
+        if (!cancelled) setList(data)
+      } catch {
+        if (!cancelled) setList([])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    
+    return () => { cancelled = true }
+  }, [ids.join(',')])
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-wrap items-end justify-between gap-4"
-      >
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-emerald-950 dark:text-white sm:text-3xl">
-            <Heart className="h-8 w-8 fill-rose-500 text-rose-500" />
-            Yêu thích
-          </h1>
-          <p className="mt-1 text-emerald-800/75 dark:text-emerald-200/70">
-            Sản phẩm bạn đã lưu (tài khoản + trình duyệt).
-          </p>
-        </div>
-        <Link
-          to="/products"
-          className="rounded-2xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
-        >
-          Tiếp tục mua sắm
-        </Link>
-      </motion.div>
+    <div className="mx-auto w-full max-w-[1440px] px-3.5 sm:px-8 xl:px-12 py-6 sm:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* Premium Header */}
+      <div className="mb-8 sm:mb-16 flex flex-col items-center justify-center text-center">
+        <h1 className="text-2xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-4">
+           Yêu thích
+        </h1>
+        <p className="max-w-xl text-sm sm:text-lg text-slate-500 dark:text-slate-400">
+           Những sản phẩm tinh túy được bạn dành riêng một chỗ trong tim.
+        </p>
+      </div>
 
-      {list.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-emerald-900/20 bg-emerald-50/50 py-16 text-center dark:border-emerald-100/15 dark:bg-emerald-950/30">
-          <p className="text-emerald-800/80 dark:text-emerald-200/80">
-            Chưa có sản phẩm nào. Nhấn ❤️ trên thẻ sản phẩm để lưu.
-          </p>
-          <Link
-            to="/products"
-            className="mt-4 inline-block font-semibold text-emerald-700 underline dark:text-emerald-300"
-          >
-            Khám phá sản phẩm
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {list.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
-          ))}
-        </div>
-      )}
+      <main className="min-h-[400px] w-full">
+         <AnimatePresence mode="wait">
+            {loading ? (
+               <motion.div 
+                  key="loading"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="flex h-full w-full items-center justify-center py-32 text-emerald-500"
+               >
+                  <Loader2 className="h-10 w-10 animate-spin" />
+               </motion.div>
+            ) : list.length === 0 ? (
+               <motion.div 
+                  key="empty"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="mx-auto flex w-full max-w-[800px] flex-col items-center justify-center py-16 sm:py-20 text-center"
+               >
+                  <div className="mb-6 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-slate-100 border border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+                     <Heart className="h-8 w-8 sm:h-10 sm:w-10 text-slate-400" />
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-4">Danh sách trống</h2>
+                  <p className="mb-8 text-sm sm:text-lg text-slate-500 dark:text-slate-400 max-w-sm">
+                     Bạn chưa thêm sản phẩm nào vào danh sách yêu thích.
+                  </p>
+                  <Link
+                     to="/products"
+                     className="rounded-full bg-emerald-600 px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white transition-all hover:bg-emerald-500 active:scale-95 shadow-xl shadow-emerald-600/20"
+                  >
+                     Khám phá sản phẩm
+                  </Link>
+               </motion.div>
+            ) : (
+               <motion.div 
+                  key="grid"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4"
+               >
+                  {list.map((p, i) => (
+                     <ProductCard key={p.id} product={p} index={i} />
+                  ))}
+               </motion.div>
+            )}
+         </AnimatePresence>
+      </main>
     </div>
   )
 }

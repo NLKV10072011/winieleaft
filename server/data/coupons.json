@@ -1,0 +1,11 @@
+[
+  {
+    "id": "6224087d-b5a1-45d1-a620-793f13910f71",
+    "code": "WIN2010",
+    "discountType": "percent",
+    "discountValue": 100,
+    "minOrderValue": 1000,
+    "expiryDate": "2026-10-30",
+    "active": true
+  }
+]

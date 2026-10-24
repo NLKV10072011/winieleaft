@@ -62,6 +62,15 @@ export async function registerRequest(
   useAuthStore.getState().setAuth(res.token, res.user)
 }
 
+export async function socialLoginRequest(idToken: string) {
+  const res = await apiSend<{ token: string; user: User }>(
+    '/auth/social',
+    'POST',
+    { idToken }
+  )
+  useAuthStore.getState().setAuth(res.token, res.user)
+}
+
 export async function updateProfile(data: {
   name?: string
   phone?: string

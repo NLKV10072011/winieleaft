@@ -44,6 +44,9 @@ export type Product = {
   slug: string
   description: string
   price: number
+  originalPrice?: number
+  brand?: string
+  subCategory?: string
   category: string
   rating: number
   image: string
@@ -56,6 +59,7 @@ export type LineItem = {
   name: string
   qty: number
   price: number
+  image: string
 }
 
 export type PaymentHint = {

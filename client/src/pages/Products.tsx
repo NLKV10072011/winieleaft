@@ -1,184 +1,254 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { SlidersHorizontal } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { AlertCircle, Sparkles, Filter } from 'lucide-react'
 import { ProductCard } from '../components/ProductCard'
-import { ProductSearchBar } from '../components/ProductSearchBar'
-import { CATEGORIES } from '../lib/constants'
+import { ProductSkeleton } from '../components/Skeleton'
 import { apiGet, type Product } from '../lib/api'
+import clsx from 'clsx'
+
+const BRANDS = [
+  { id: 'all', label: 'Tất cả nhãn hàng', tag: 'All' },
+  { id: 'fuwa3e', label: 'Fuwa3e Enzyme', tag: 'Sinh học' },
+  { id: 'vitrue', label: 'VITRUE Natural', tag: 'Detox' },
+  { id: 'moc-nam', label: 'Mộc Nam Thảo Dược', tag: 'Thảo mộc' },
+  { id: 'dda-cal', label: 'DDA-CAL Canxi', tag: 'Hữu cơ' },
+]
+
+const SUB_CATEGORIES: Record<string, { id: string; label: string }[]> = {
+  fuwa3e: [
+    { id: 'all', label: 'Tất cả Fuwa3e' },
+    { id: 'rua-chen', label: 'Rửa chén & Máy rửa chén' },
+    { id: 'giat-xa', label: 'Giặt xả sinh học' },
+    { id: 'lau-san-da-nang', label: 'Lau sàn & Đa năng' },
+    { id: 'rua-tay-khu-trung', label: 'Rửa tay & Khử trùng' },
+    { id: 'ngam-rua-thuc-pham', label: 'Ngâm rửa thực phẩm' },
+  ],
+  vitrue: [
+    { id: 'all', label: 'Tất cả VITRUE' },
+    { id: 'detox', label: 'Tinh chất thải độc Detox' },
+    { id: 'noni-celery', label: 'Cần tây & Tinh chất Noni' },
+    { id: 'combo', label: 'Combo sức khỏe' },
+  ],
+  'moc-nam': [
+    { id: 'all', label: 'Tất cả Mộc Nam' },
+    { id: 'cham-soc-toc', label: 'Chăm sóc tóc (Dầu gội, Serum X5, Kem xả)' },
+    { id: 'cham-co-the', label: 'Chăm sóc cơ thể & Khử mùi' },
+    { id: 'cham-soc-da', label: 'Chăm sóc da & Bọt rửa mặt' },
+  ],
+  'dda-cal': [
+    { id: 'all', label: 'Tất cả DDA-CAL' },
+    { id: 'canxi', label: 'Canxi hữu cơ tinh khiết' },
+  ],
+}
 
 export function Products() {
-  const [params, setParams] = useSearchParams()
-  const [list, setList] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const category = params.get('category') || 'all'
-  const sort = params.get('sort') || 'newest'
-  const minRating = params.get('minRating') || ''
-  const minPrice = params.get('minPrice') || ''
-  const maxPrice = params.get('maxPrice') || ''
-  const inStock = params.get('inStock') === '1'
-  const featuredOnly = params.get('featured') === '1'
+  const brand = searchParams.get('brand') || 'all'
+  const subCategory = searchParams.get('sub') || 'all'
+  const query = searchParams.get('q') || ''
 
-  const queryString = useMemo(() => {
-    const p = new URLSearchParams()
-    const q = params.get('q')
-    if (q) p.set('q', q)
-    if (category && category !== 'all') p.set('category', category)
-    if (sort && sort !== 'newest') p.set('sort', sort)
-    if (minRating) p.set('minRating', minRating)
-    if (minPrice) p.set('minPrice', minPrice)
-    if (maxPrice) p.set('maxPrice', maxPrice)
-    if (inStock) p.set('inStock', '1')
-    if (featuredOnly) p.set('featured', '1')
-    return p.toString() ? `?${p.toString()}` : ''
-  }, [
-    params,
-    category,
-    sort,
-    minRating,
-    minPrice,
-    maxPrice,
-    inStock,
-    featuredOnly,
-  ])
-
+  // Load all products initially
   useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      setLoading(true)
-      try {
-        const data = await apiGet<Product[]>(`/products${queryString}`)
-        if (!cancelled) setList(data)
-      } catch {
-        if (!cancelled) setList([])
-      } finally {
-        if (!cancelled) setLoading(false)
+    setLoading(true)
+    apiGet<Product[]>('/products')
+      .then(setAllProducts)
+      .catch((e) => setErr(e.message || 'Lỗi tải sản phẩm'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Filter products client-side for zero-latency instant feedback
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((p) => {
+      // Search keyword
+      if (query) {
+        const q = query.toLowerCase()
+        const matchName = p.name.toLowerCase().includes(q)
+        const matchDesc = p.description?.toLowerCase().includes(q)
+        if (!matchName && !matchDesc) return false
       }
-    })()
-    return () => {
-      cancelled = true
+
+      // Brand filter
+      if (brand !== 'all') {
+        if (p.brand !== brand) return false
+      }
+
+      // SubCategory filter
+      if (subCategory !== 'all') {
+        if (p.subCategory !== subCategory) return false
+      }
+
+      return true
+    })
+  }, [allProducts, brand, subCategory, query])
+
+  // Count items per brand for badge display
+  const brandCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: allProducts.length }
+    for (const p of allProducts) {
+      if (p.brand) {
+        counts[p.brand] = (counts[p.brand] || 0) + 1
+      }
     }
-  }, [queryString])
+    return counts
+  }, [allProducts])
 
-  function update(key: string, value: string) {
-    const p = new URLSearchParams(params)
-    if (!value || value === 'all') p.delete(key)
-    else p.set(key, value)
-    setParams(p)
+  function selectBrand(newBrand: string) {
+    const nextParams = new URLSearchParams(searchParams)
+    if (newBrand === 'all') {
+      nextParams.delete('brand')
+      nextParams.delete('sub')
+    } else {
+      nextParams.set('brand', newBrand)
+      nextParams.delete('sub') // reset subcategory on brand change
+    }
+    setSearchParams(nextParams)
   }
 
-  function toggleFlag(key: 'inStock' | 'featured', checked: boolean) {
-    const p = new URLSearchParams(params)
-    if (checked) p.set(key, '1')
-    else p.delete(key)
-    setParams(p)
+  function selectSub(newSub: string) {
+    const nextParams = new URLSearchParams(searchParams)
+    if (newSub === 'all') {
+      nextParams.delete('sub')
+    } else {
+      nextParams.set('sub', newSub)
+    }
+    setSearchParams(nextParams)
   }
+
+  const currentSubList = brand !== 'all' ? SUB_CATEGORIES[brand] || [] : []
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-emerald-950 dark:text-white sm:text-3xl">
-          Sản phẩm
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-8 xl:px-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header section */}
+      <div className="mb-10 flex flex-col items-center text-center">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 mb-3 border border-emerald-200 dark:border-emerald-900/50">
+          <Sparkles className="h-3.5 w-3.5" /> Bộ sưu tập chính hãng
+        </span>
+        <h1 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+          Sản phẩm <span className="text-emerald-500 italic">Winie Leaf</span>
         </h1>
-        <p className="mt-1 text-emerald-800/80 dark:text-emerald-200/75">
-          Gợi ý khi gõ (danh mục + giá), lọc nâng cao: tồn, nổi bật, giá, đánh
-          giá.
+        <p className="mt-3 max-w-xl text-slate-500 dark:text-slate-400 text-sm sm:text-base">
+          Lựa chọn các sản phẩm sinh học, thảo dược thiên nhiên và giải pháp sức khỏe thuần khiết.
         </p>
       </div>
 
-      <ProductSearchBar
-        variant="page"
-        urlQuery={params.get('q') || ''}
-        onApply={(query) => {
-          const p = new URLSearchParams(params)
-          if (query.trim()) p.set('q', query.trim())
-          else p.delete('q')
-          setParams(p)
-        }}
-      />
-
-      <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-emerald-900/10 bg-white/80 p-4 dark:border-emerald-100/10 dark:bg-[#141c18]/80">
-        <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 dark:text-emerald-200">
-          <SlidersHorizontal className="h-4 w-4" />
-          Bộ lọc
-        </span>
-        <select
-          value={category}
-          onChange={(e) => update('category', e.target.value)}
-          className="rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm dark:border-emerald-100/10 dark:bg-[#0c1210]"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => update('sort', e.target.value)}
-          className="rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm dark:border-emerald-100/10 dark:bg-[#0c1210]"
-        >
-          <option value="newest">Mới nhất</option>
-          <option value="name">Tên A–Z</option>
-          <option value="price-asc">Giá tăng dần</option>
-          <option value="price-desc">Giá giảm dần</option>
-          <option value="rating">Đánh giá cao</option>
-        </select>
-        <input
-          type="number"
-          min={0}
-          placeholder="Giá từ"
-          value={minPrice}
-          onChange={(e) => update('minPrice', e.target.value)}
-          className="w-28 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm dark:border-emerald-100/10 dark:bg-[#0c1210]"
-        />
-        <input
-          type="number"
-          min={0}
-          placeholder="Đến"
-          value={maxPrice}
-          onChange={(e) => update('maxPrice', e.target.value)}
-          className="w-28 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm dark:border-emerald-100/10 dark:bg-[#0c1210]"
-        />
-        <select
-          value={minRating}
-          onChange={(e) => update('minRating', e.target.value)}
-          className="rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm dark:border-emerald-100/10 dark:bg-[#0c1210]"
-        >
-          <option value="">Đánh giá</option>
-          <option value="4">≥ 4★</option>
-          <option value="4.5">≥ 4.5★</option>
-          <option value="4.8">≥ 4.8★</option>
-        </select>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-emerald-900 dark:text-emerald-100">
-          <input
-            type="checkbox"
-            checked={inStock}
-            onChange={(e) => toggleFlag('inStock', e.target.checked)}
-            className="rounded border-emerald-800/30"
-          />
-          Còn hàng
-        </label>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-emerald-900 dark:text-emerald-100">
-          <input
-            type="checkbox"
-            checked={featuredOnly}
-            onChange={(e) => toggleFlag('featured', e.target.checked)}
-            className="rounded border-emerald-800/30"
-          />
-          Nổi bật
-        </label>
+      {/* FILTER LEVEL 1: NHÃN HÀNG (BRANDS) */}
+      <div className="mb-4 sm:mb-6 w-full">
+        <div className="flex items-center gap-2 mb-2 sm:mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 justify-center">
+          <Filter className="h-3.5 w-3.5" /> Lọc theo nhãn hàng:
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto py-1 px-1 w-full max-w-full no-scrollbar sm:flex-wrap sm:justify-center">
+          {BRANDS.map((b) => {
+            const count = brandCounts[b.id] ?? 0
+            const active = brand === b.id
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => selectBrand(b.id)}
+                className={clsx(
+                  'cursor-pointer shrink-0 flex items-center gap-1.5 sm:gap-2 rounded-[1.5rem] px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-300',
+                  active
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200 dark:bg-[#1e1e1e] dark:text-white dark:border-slate-700'
+                    : 'bg-slate-100/80 dark:bg-[#111111] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border border-transparent'
+                )}
+              >
+                <span>{b.label}</span>
+                <span
+                  className={clsx(
+                    'text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full transition-colors',
+                    active
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-200/80 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
+      {/* FILTER LEVEL 2: DÒNG SẢN PHẨM CON TRONG NHÃN HÀNG (SUBCATEGORIES) */}
+      <AnimatePresence mode="wait">
+        {currentSubList.length > 0 && (
+          <motion.div
+            key={brand}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="mb-6 sm:mb-8 flex items-center gap-2 overflow-x-auto py-1 px-1 w-full max-w-full no-scrollbar sm:flex-wrap sm:justify-center border-t border-slate-200/40 dark:border-slate-800/40 pt-3"
+          >
+            {currentSubList.map((sub) => {
+              const active = subCategory === sub.id
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => selectSub(sub.id)}
+                  className={clsx(
+                    'cursor-pointer shrink-0 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 rounded-full transition-all duration-200 border whitespace-nowrap',
+                    active
+                      ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                      : 'bg-white dark:bg-[#141414] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-600'
+                  )}
+                >
+                  {sub.label}
+                </button>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Grid */}
       {loading ? (
-        <p className="text-center text-emerald-800/70">Đang tải...</p>
-      ) : list.length === 0 ? (
-        <p className="text-center text-emerald-800/70">Không có sản phẩm phù hợp.</p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <ProductSkeleton key={i} />
           ))}
+        </div>
+      ) : err ? (
+        <div className="py-20 text-center">
+          <AlertCircle className="h-12 w-12 text-rose-500 mx-auto mb-4" />
+          <p className="text-slate-500">{err}</p>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="py-24 text-center text-slate-400">
+          <p className="text-base sm:text-lg">Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchParams(new URLSearchParams())
+            }}
+            className="mt-4 inline-block text-sm font-medium text-emerald-600 hover:underline"
+          >
+            Xóa bộ lọc & xem tất cả
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div className="mb-4 sm:mb-6 flex justify-between items-center text-xs sm:text-sm text-slate-400">
+            <span>Hiển thị <strong>{filteredProducts.length}</strong> sản phẩm</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredProducts.map((p, idx) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: Math.min(idx * 0.02, 0.2) }}
+              >
+                <ProductCard product={p} />
+              </motion.div>
+            ))}
+          </div>
         </div>
       )}
     </div>

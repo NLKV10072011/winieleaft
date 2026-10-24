@@ -7,7 +7,7 @@ type Msg = { role: 'user' | 'assistant'; content: string }
 const WELCOME: Msg = {
   role: 'assistant',
   content:
-    'Xin chào! Mình là trợ lý AI của Winie Leaf — hỏi mình về sản phẩm, đặt hàng hoặc liên hệ shop (hotline/Zalo và Facebook mình sẽ gửi khi bạn cần).',
+    'Xin chào! Mình là trợ lý AI của Winie Leaf — hỏi mình về sản phẩm, đặt hàng hoặc liên hệ shop.\n\n📞 Zalo/Hotline: 0794010454\n📘 Facebook: https://www.facebook.com/profile.php?id=61578757753489\n📸 Instagram: https://www.instagram.com/jian._wen_/',
 }
 
 export function ChatWidget() {
@@ -53,7 +53,7 @@ export function ChatWidget() {
         ...next,
         {
           role: 'assistant',
-          content: `Không gửi được tin lúc này (${m}). Bạn thử lại sau, hoặc gọi/Zalo 0794010454 — Facebook: https://www.facebook.com/profile.php?id=61578757753489`,
+          content: `Không gửi được tin lúc này (${m}). Bạn thử lại sau, hoặc gọi/Zalo 0794010454.\nFacebook: https://www.facebook.com/profile.php?id=61578757753489\nInsta: https://www.instagram.com/jian._wen_/`,
         },
       ])
     } finally {
@@ -66,10 +66,10 @@ export function ChatWidget() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-lg shadow-emerald-900/30 transition hover:scale-105 hover:bg-emerald-600 dark:bg-emerald-600"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-lg shadow-emerald-900/30 transition hover:scale-105 active:scale-95 hover:bg-emerald-600 dark:bg-emerald-600"
         aria-label="Chat hỗ trợ"
       >
-        <MessageCircle className="h-7 w-7" />
+        <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
       </button>
       <AnimatePresence>
         {open && (
@@ -77,20 +77,20 @@ export function ChatWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            className="fixed bottom-24 right-6 z-50 flex w-[min(100vw-2rem,380px)] flex-col overflow-hidden rounded-3xl border border-emerald-900/15 bg-white shadow-2xl dark:border-emerald-100/10 dark:bg-[#141c18]"
+            className="fixed bottom-18 right-3 left-3 sm:left-auto sm:right-6 z-50 flex sm:w-[380px] max-h-[80vh] flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-emerald-900/15 bg-white shadow-2xl dark:border-emerald-100/10 dark:bg-[#141c18]"
           >
             <div className="flex items-center justify-between bg-emerald-800 px-4 py-3 text-white dark:bg-emerald-900">
-              <span className="font-semibold">Winie Leaf — Trợ lý AI</span>
+              <span className="font-semibold text-sm sm:text-base">Winie Leaf — Trợ lý AI</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1 hover:bg-white/10"
+                className="rounded-lg p-1 hover:bg-white/10 active:scale-95"
                 aria-label="Đóng"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="max-h-72 space-y-3 overflow-y-auto p-4 text-sm text-emerald-900 dark:text-emerald-100">
+            <div className="max-h-72 space-y-3 overflow-y-auto p-4 text-xs sm:text-sm text-emerald-900 dark:text-emerald-100">
               {messages.map((m, i) => (
                 <p
                   key={i}
@@ -120,15 +120,15 @@ export function ChatWidget() {
                 onChange={(e) => setMsg(e.target.value)}
                 placeholder="Nhập tin nhắn…"
                 disabled={loading}
-                className="min-w-0 flex-1 rounded-2xl border border-emerald-900/15 bg-white px-3 py-2 text-sm outline-none ring-emerald-600/30 focus:ring-2 disabled:opacity-60 dark:border-emerald-100/15 dark:bg-[#0c1210]"
+                className="min-w-0 flex-1 rounded-2xl border border-emerald-900/15 bg-white px-3 py-2 text-base sm:text-sm outline-none ring-emerald-600/30 focus:ring-2 disabled:opacity-60 dark:border-emerald-100/15 dark:bg-[#0c1210]"
               />
               <button
                 type="submit"
                 disabled={loading || !msg.trim()}
-                className="rounded-2xl bg-emerald-700 p-2.5 text-white hover:bg-emerald-600 disabled:opacity-50"
+                className="rounded-2xl bg-emerald-700 p-2.5 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-95"
                 aria-label="Gửi"
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </form>
           </motion.div>
